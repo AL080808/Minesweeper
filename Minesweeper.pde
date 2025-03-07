@@ -1,15 +1,16 @@
 import de.bezier.guido.*;
 import java.util.ArrayList;
 
-// Declare and initialize constants NUM_ROWS and NUM_COLS = 5 for easier testing
-private static final int NUM_ROWS = 5;
-private static final int NUM_COLS = 5;
+// Increased grid size and difficulty
+private static final int NUM_ROWS = 10;
+private static final int NUM_COLS = 10;
+private static final int MINE_COUNT = (NUM_ROWS * NUM_COLS) / 4; // 25% of the grid is mines
 
 private MSButton[][] buttons; // 2D array of Minesweeper buttons
 private ArrayList<MSButton> mines; // ArrayList of mine buttons
 
 void setup() {
-    size(400, 400);
+    size(500, 500); // Adjust canvas size
     textAlign(CENTER, CENTER);
 
     // Initialize the Guido Interactive Manager
@@ -33,8 +34,7 @@ void setup() {
 }
 
 public void setMines() {
-    int numMines = (NUM_ROWS * NUM_COLS) / 5; // Adjust number of mines
-    while (mines.size() < numMines) {
+    while (mines.size() < MINE_COUNT) {
         int row = (int) (Math.random() * NUM_ROWS);
         int col = (int) (Math.random() * NUM_COLS);
 
@@ -104,8 +104,8 @@ public class MSButton {
     private String myLabel;
 
     public MSButton(int row, int col) {
-        width = 400 / NUM_COLS;
-        height = 400 / NUM_ROWS;
+        width = 500 / NUM_COLS;
+        height = 500 / NUM_ROWS;
         myRow = row;
         myCol = col;
         x = myCol * width;
@@ -144,7 +144,7 @@ public class MSButton {
 
     public void draw() {
         if (flagged) {
-            fill(0);
+            fill(0, 0, 255); // Blue for flagged cells
         } else if (clicked && mines.contains(this)) {
             fill(255, 0, 0); // Red for mines
         } else if (clicked) {
