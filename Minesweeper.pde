@@ -1,51 +1,48 @@
 import de.bezier.guido.*;
 import java.util.ArrayList;
 
-// Updated settings for larger, harder game
-private static final int NUM_ROWS = 20;
-private static final int NUM_COLS = 20;
-private static final int MINE_COUNT = (NUM_ROWS * NUM_COLS) / 4; // 25% of the grid will be mines
+// Increased grid size and difficulty
+private static final int NUM_ROWS = 10;
+private static final int NUM_COLS = 10;
+private static final int MINE_COUNT = (NUM_ROWS * NUM_COLS) / 4; // 25% of the grid is mines
 
-private MSButton[][] buttons;
-private ArrayList<MSButton> mines;
-private boolean firstClick = true; // Ensure first click is safe
+private MSButton[][] buttons; // 2D array of Minesweeper buttons
+private ArrayList<MSButton> mines; // ArrayList of mine buttons
 
 void setup() {
-    size(600, 600); // Adjusted to fit a 20x20 grid
+    size(500, 500); // Adjust canvas size
     textAlign(CENTER, CENTER);
-    
+
+    // Initialize the Guido Interactive Manager
     Interactive.make(this);
 
+    // Initialize buttons 2D array
     buttons = new MSButton[NUM_ROWS][NUM_COLS];
 
+    // Create MSButton objects for each row and column
     for (int r = 0; r < NUM_ROWS; r++) {
         for (int c = 0; c < NUM_COLS; c++) {
             buttons[r][c] = new MSButton(r, c);
         }
     }
 
-    mines = new ArrayList<>();
+    // Initialize mines ArrayList
+    mines = new ArrayList<MSButton>();
+
+    // Place mines randomly
+    setMines();
 }
 
-public void setMines(int safeRow, int safeCol) {
-    mines.clear(); // Ensure no old mines exist
-
+public void setMines() {
     while (mines.size() < MINE_COUNT) {
         int row = (int) (Math.random() * NUM_ROWS);
         int col = (int) (Math.random() * NUM_COLS);
 
-        // Ensure mine isn't on the first clicked button or its immediate neighbors
-        if (!mines.contains(buttons[row][col]) && 
-            (row != safeRow || col != safeCol) &&
-            !isNeighbor(safeRow, safeCol, row, col)) {
+        // Ensure the mine isn't already placed
+        if (!mines.contains(buttons[row][col])) {
             mines.add(buttons[row][col]);
         }
     }
-}
-
-// Ensure mines don't spawn in the 3x3 area around the first click
-public boolean isNeighbor(int r1, int c1, int r2, int c2) {
-    return Math.abs(r1 - r2) <= 1 && Math.abs(c1 - c2) <= 1;
 }
 
 public void draw() {
@@ -59,27 +56,27 @@ public boolean isWon() {
     for (int r = 0; r < NUM_ROWS; r++) {
         for (int c = 0; c < NUM_COLS; c++) {
             if (!mines.contains(buttons[r][c]) && !buttons[r][c].clicked) {
-                return false;
+                return false; // Not all non-mine cells are clicked
             }
         }
     }
-    return true;
+    return true; // Player won
 }
 
 public void displayLosingMessage() {
     for (MSButton mine : mines) {
         mine.clicked = true; // Reveal all mines
     }
-    System.out.println("💥 Game Over! You hit a mine!");
+    System.out.println("Game Over! You hit a mine!");
 }
 
 public void displayWinningMessage() {
     for (int r = 0; r < NUM_ROWS; r++) {
         for (int c = 0; c < NUM_COLS; c++) {
-            buttons[r][c].setLabel("W"); // Indicate win
+            buttons[r][c].setLabel("W"); // Indicate winning state
         }
     }
-    System.out.println("🎉 Congratulations! You won!");
+    System.out.println("Congratulations! You won!");
 }
 
 public boolean isValid(int r, int c) {
@@ -107,52 +104,40 @@ public class MSButton {
     private String myLabel;
 
     public MSButton(int row, int col) {
-        width = 600 / NUM_COLS;
-        height = 600 / NUM_ROWS;
+        width = 500 / NUM_COLS;
+        height = 500 / NUM_ROWS;
         myRow = row;
         myCol = col;
         x = myCol * width;
         y = myRow * height;
         myLabel = "";
         flagged = clicked = false;
-        Interactive.add(this);
+        Interactive.add(this); // Register it with the manager
     }
 
     public void mousePressed() {
-        if (flagged) return;
-
-        // First click logic: Ensure no mine on first click
-        if (firstClick) {
-            setMines(myRow, myCol);
-            firstClick = false;
-        }
-
+        if (flagged) return; // Ignore clicks on flagged buttons
         clicked = true;
 
         if (mouseButton == RIGHT) {
-            flagged = !flagged;
-            if (!flagged) clicked = false;
+            flagged = !flagged; // Toggle flag
+            if (!flagged) clicked = false; // Unflagged cells should not be clicked
         } else if (mines.contains(this)) {
-            displayLosingMessage();
+            displayLosingMessage(); // Hit a mine, game over
         } else {
             int mineCount = countMines(myRow, myCol);
             if (mineCount > 0) {
                 setLabel(mineCount);
             } else {
-                revealNeighbors();
-            }
-        }
-    }
-
-    private void revealNeighbors() {
-        int[][] neighbors = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}};
-
-        for (int[] n : neighbors) {
-            int r = myRow + n[0];
-            int c = myCol + n[1];
-
-            if (isValid(r, c) && !buttons[r][c].clicked) {
-                buttons[r][c].mousePressed();
+                // Recursively reveal neighboring non-mine cells
+                int[][] neighbors = {{-1, -1}, {-1, 0}, {-1, 1}, {0, -1}, {0, 1}, {1, -1}, {1, 0}, {1, 1}};
+                for (int[] n : neighbors) {
+                    int r = myRow + n[0];
+                    int c = myCol + n[1];
+                    if (isValid(r, c) && !buttons[r][c].clicked) {
+                        buttons[r][c].mousePressed();
+                    }
+                }
             }
         }
     }
